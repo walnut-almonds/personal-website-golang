@@ -1,0 +1,10 @@
+# docker-compose.yaml
+version: "3"
+services:
+  admin:
+    container_name: personal-website-golang
+    build: ./admin
+    tty: true
+    volumes:
+      - ./:/personal-website-golang
+    network_mode: host
