@@ -42,7 +42,7 @@ func (s *restService) Run(ctx context.Context) {
 
 	s.setRoutes(engine)
 
-	addr := s.in.AppConf.GetGinConfig().AdminAddress
+	addr := s.in.AppConf.GetGinConfig().Address
 	if err := engine.Run(addr); err != nil {
 		s.in.SysLogger.Panic(nil, err)
 	}

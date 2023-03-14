@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/dig"
@@ -15,13 +16,14 @@ import (
 	"personal-website-golang/service/internal/thirdparty/logger"
 )
 
-func RunAdmin() {
-	binder := binder.New()
-	if err := binder.Invoke(initServer); err != nil {
-		panic(err)
-	}
+// admin
+var (
+	adminApp     *AdminApp
+	adminSetOnce sync.Once
+)
 
-	select {}
+type AdminApp struct {
+	in adminAppDigIn
 }
 
 type adminAppDigIn struct {
@@ -33,33 +35,47 @@ type adminAppDigIn struct {
 	AdminRestService admin.IService
 }
 
-func initServer(in digIn) {
-	ctx := context.Background()
+func RunAdminServer() {
+	binder := binder.New()
+	if err := binder.Invoke(runAdminServer); err != nil {
+		panic(err)
+	}
 
-	serverInterrupt(ctx, in)
-	ginMode(in)
-	in.SysLogger.Info(ctx, fmt.Sprintf("[Build Info] %s", getBuildInfo()))
-
-	go in.AdminRestService.Run(ctx)
+	select {}
 }
 
-func ginMode(in digIn) {
+func runAdminServer(in AdminApp) {
+	adminSetOnce.Do(func() {
+		adminApp = &in
+	})
+
+	ctx := context.Background()
+
+	adminApp.serverInterrupt(ctx)
+	adminApp.ginMode()
+
+	adminApp.in.SysLogger.Info(ctx, fmt.Sprintf("[Build Info] %s", getBuildInfo()))
+
+	go adminApp.in.AdminRestService.Run(ctx)
+}
+
+func (app *AdminApp) ginMode() {
 	gin.DisableConsoleColor()
-	if in.AppConf.GetGinConfig().DebugMode == false {
+	if app.in.AppConf.GetGinConfig().DebugMode == false {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
 	}
 }
 
-func serverInterrupt(ctx context.Context, in digIn) {
+func (app *AdminApp) serverInterrupt(ctx context.Context) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill)
 
 	go func() {
 		select {
 		case c := <-interrupt:
-			in.SysLogger.Warn(ctx, fmt.Sprintf("Server Shutdown, osSignal: %v", c))
+			app.in.SysLogger.Warn(ctx, fmt.Sprintf("Server Shutdown, osSignal: %v", c))
 			os.Exit(0)
 		}
 	}()

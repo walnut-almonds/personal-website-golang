@@ -9,7 +9,6 @@ func (s *restService) setApiRouters(parentRouteGroup *gin.RouterGroup) {
 }
 
 func (s *restService) setLoginAPIRoutes(parentRouteGroup *gin.RouterGroup) {
-
 	anonymous := parentRouteGroup.Group("")
 	anonymous.POST("/login", s.in.LoginCtrl.AddSession)
 

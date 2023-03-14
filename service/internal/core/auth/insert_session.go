@@ -9,21 +9,21 @@ import (
 	"gorm.io/gorm"
 )
 
-func newLogin(in digIn) *login {
-	return &login{
+type IInsertSession interface {
+	Handle(ctx context.Context, cond *bo.AddSession) (string, error)
+}
+
+type insertSession struct {
+	in digIn
+}
+
+func newInsertSession(in digIn) *IInsertSession {
+	return &insertSession{
 		in: in,
 	}
 }
 
-type ILogin interface{}
-
-type login struct {
-	in digIn
-}
-
-func (uc *addSession) Handle(ctx context.Context, req *bo.AddSession) (string, error) {
-	defer timelogger.LogTime(ctx)()
-
+func (uc *insertSession) Handle(ctx context.Context, req *bo.InsertSession) (string, error) {
 	if err := uc.validateCond(ctx, req); err != nil {
 		return "", xerrors.Errorf("%w", err)
 	}
@@ -74,7 +74,7 @@ func (uc *addSession) Handle(ctx context.Context, req *bo.AddSession) (string, e
 	return token, nil
 }
 
-func (uc *addSession) validateCond(ctx context.Context, cond *bo.AddSession) error {
+func (uc *insertSession) validateCond(ctx context.Context, cond *bo.AddSession) error {
 	cond.Login = strings.TrimSpace(cond.Login)
 	if len(cond.Login) <= 0 {
 		return xerrors.Errorf("addSession.validateCond: admin: %s, err: %w", cond.Login, errs.RequestParamInvalid)
@@ -89,7 +89,7 @@ func (uc *addSession) validateCond(ctx context.Context, cond *bo.AddSession) err
 }
 
 // validateLogin 驗證是否登入成功
-func (uc *addSession) validateLogin(ctx context.Context, db *gorm.DB, cond *bo.AddSession, info *po.User) error {
+func (uc *insertSession) validateLogin(ctx context.Context, db *gorm.DB, cond *bo.AddSession, info *po.User) error {
 	// 登入次數驗證，超過失敗上限就不能登入
 	if info.LockNum >= admin.GetAppConfig().GetOtherConfig().Auth.LoginFailTimes {
 		return xerrors.Errorf("%w", errs.AuthLoginFailOver)
@@ -112,7 +112,7 @@ func (uc *addSession) validateLogin(ctx context.Context, db *gorm.DB, cond *bo.A
 }
 
 // 更新錯誤次數
-func (uc *addSession) updateLockNum(ctx context.Context, db *gorm.DB, info *po.User, lockNum int) error {
+func (uc *insertSession) updateLockNum(ctx context.Context, db *gorm.DB, info *po.User, lockNum int) error {
 	info.LockNum = lockNum
 	if err := uc.in.UserRepo.Update(ctx, db, info); err != nil {
 		return xerrors.Errorf("addSession.UserRepo.Update: adminLogin %s, lockNum: %d, error: %w", info.Login, lockNum, err)
