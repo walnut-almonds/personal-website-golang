@@ -28,12 +28,6 @@ type LocalCacheConfig struct {
 	DefaultExpirationSec time.Duration `mapstructure:"default_expiration_sec"`
 }
 
-type SlackConfig struct {
-	Token     string `mapstructure:"token"`
-	ChannelID string `mapstructure:"channel_id"`
-	BotName   string `mapstructure:"bot_name"`
-}
-
 type MongoConfig struct {
 	ReplicaName     string        `mapstructure:"replica_name"`
 	ReadPreference  string        `mapstructure:"read_preference"`
@@ -43,10 +37,4 @@ type MongoConfig struct {
 	MaxStaleness    time.Duration `mapstructure:"max_staleness"`
 	SlowLogEnable   bool          `mapstructure:"slow_log_enable"`
 	SlowLogJudgment time.Duration `mapstructure:"slow_log_judgment"`
-}
-
-type TelegramConfig struct {
-	Token     string `mapstructure:"token"`
-	AM6ChatID int64  `mapstructure:"am6_chat_id"`
-	HK6ChatID int64  `mapstructure:"hk6_chat_id"`
 }

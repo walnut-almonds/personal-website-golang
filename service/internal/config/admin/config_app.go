@@ -25,9 +25,7 @@ type IAppConfig interface {
 	GetGinConfig() GinConfig
 	GetMySQLConfig() MySQLConfig
 	GetLocalCacheConfig() LocalCacheConfig
-	GetSlackConfig() SlackConfig
 	GetMongoConfig() MongoConfig
-	GetTelegramConfig() TelegramConfig
 }
 
 type AppConfigSetup struct {
@@ -43,9 +41,7 @@ type AppConfig struct {
 	GinConfig        GinConfig        `mapstructure:"gin_config"`
 	MySQLConfig      MySQLConfig      `mapstructure:"mysql_config"`
 	LocalCacheConfig LocalCacheConfig `mapstructure:"local_cache_config"`
-	SlackConfig      SlackConfig      `mapstructure:"slack_config"`
 	MongoConfig      MongoConfig      `mapstructure:"mongo_config"`
-	TelegramConfig   TelegramConfig   `mapstructure:"telegram_config"`
 }
 
 func (c *AppConfigSetup) GetLastChangeTime() time.Time {
@@ -61,7 +57,7 @@ func (c *AppConfigSetup) loadYaml() {
 	if err != nil {
 		panic(err)
 	}
-	c.v.SetConfigName("config.yaml")
+	c.v.SetConfigName("app.yaml")
 	c.v.SetConfigType("yaml")
 	c.v.AddConfigPath(path)
 	if err := c.v.ReadInConfig(); err != nil {
@@ -97,14 +93,6 @@ func (cfg *AppConfigSetup) GetLocalCacheConfig() LocalCacheConfig {
 	return cfg.AppConfig.LocalCacheConfig
 }
 
-func (cfg *AppConfigSetup) GetSlackConfig() SlackConfig {
-	return cfg.AppConfig.SlackConfig
-}
-
 func (cfg *AppConfigSetup) GetMongoConfig() MongoConfig {
 	return cfg.AppConfig.MongoConfig
-}
-
-func (cfg *AppConfigSetup) GetTelegramConfig() TelegramConfig {
-	return cfg.AppConfig.TelegramConfig
 }

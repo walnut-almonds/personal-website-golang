@@ -7,27 +7,25 @@ type MySQLOps struct {
 	Username string `mapstructure:"username"`
 }
 
-type FileServerOps struct {
-	TaskB266      FileServerDetail `mapstructure:"task_b_266"`
-	TaskB277      FileServerDetail `mapstructure:"task_b_277"`
-	TaskB277Fixed FileServerDetail `mapstructure:"task_b_277_fixed"`
-}
-
-type DWHOps struct {
-	Address string `mapstructure:"address"`
-	User    string `mapstructure:"user"`
-	Passwd  string `mapstructure:"passwd"`
-}
-
-type FileServerDetail struct {
-	Address  string `mapstructure:"address"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-}
-
 type MongoOps struct {
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	Host     string `mapstructure:"host"`
 	Dbname   string `mapstructure:"dbname"`
+}
+
+type FileServerOps struct {
+	Address  string `mapstructure:"address"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+}
+
+type SlackOps struct {
+	Token     string `mapstructure:"token"`
+	ChannelID string `mapstructure:"channel_id"`
+	BotName   string `mapstructure:"bot_name"`
+}
+
+type TelegramOps struct {
+	Token string `mapstructure:"token"`
 }

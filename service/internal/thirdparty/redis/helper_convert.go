@@ -1,4 +1,4 @@
-package redisclient
+package redis
 
 func convertInterfaceArrayToStringArray(dataArray []interface{}) []string {
 	stringArray := make([]string, 0, len(dataArray))

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"personal-website-golang/service/internal/core/auth"
 	"sync"
 
 	"go.uber.org/dig"
@@ -32,13 +33,13 @@ type digOut struct {
 
 	AuthCtrl IAuthCtrl
 
-	AuthHttpMiddleware IAuthHttpMiddleware
+	AuthMiddleware IAuthMiddleware
 }
 
 type authUseCaseIn struct {
 	dig.In
 
-	AddSession    auth.IAddSession
+	InsertSession auth.IInsertSession
 	DeleteSession auth.IDeleteSession
 
 	ValidateToken auth.IValidateToken

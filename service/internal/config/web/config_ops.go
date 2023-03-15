@@ -23,7 +23,6 @@ func newOpsConfig() IOpsConfig {
 type IOpsConfig interface {
 	GetOpsMySQLConfig() MySQLOps
 	GetOpsFileServerConfig() FileServerOps
-	GetDWHServerConfig() DWHOps
 	GetOpsMongoConfig() MongoOps
 }
 
@@ -37,8 +36,9 @@ type OpsConfigSetup struct {
 type OpsConfig struct {
 	MySQLOps      MySQLOps      `mapstructure:"mysql_ops"`
 	FileServerOps FileServerOps `mapstructure:"file_server_ops"`
-	DWHOps        DWHOps        `mapstructure:"dwh_ops"`
 	MongoOps      MongoOps      `mapstructure:"mongo_ops"`
+	SlackOps      SlackOps      `mapstructure:"slack_ops"`
+	TelegramOps   TelegramOps   `mapstructure:"telegram_ops"`
 }
 
 func (c *OpsConfigSetup) GetLastChangeTime() time.Time {
@@ -81,10 +81,14 @@ func (cfg *OpsConfigSetup) GetOpsFileServerConfig() FileServerOps {
 	return cfg.OpsConfig.FileServerOps
 }
 
-func (cfg *OpsConfigSetup) GetDWHServerConfig() DWHOps {
-	return cfg.OpsConfig.DWHOps
-}
-
 func (cfg *OpsConfigSetup) GetOpsMongoConfig() MongoOps {
 	return cfg.OpsConfig.MongoOps
+}
+
+func (cfg *OpsConfigSetup) GetOpsSlackConfig() SlackOps {
+	return cfg.OpsConfig.SlackOps
+}
+
+func (cfg *OpsConfigSetup) GetOpsTelegramConfig() TelegramOps {
+	return cfg.OpsConfig.TelegramOps
 }
