@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"personal-website-golang/service/internal/thirdparty/logger"
 	"sync"
 	"time"
 
@@ -43,7 +44,7 @@ func (c *DBClient) Collection(collection string) *mongo.Collection {
 	return c.db.Collection(collection)
 }
 
-func initWithConfig(config Config) IMongoDBClient {
+func initWithConfig(sysLogger logger.ILogger, config Config) IMongoDBClient {
 	c := &DBClient{}
 	mongoOptions := options.Client().ApplyURI("mongodb://" + config.Host).SetMaxConnIdleTime(5 * time.Second).SetMaxPoolSize(200)
 	if config.User != "" {
@@ -66,6 +67,8 @@ func initWithConfig(config Config) IMongoDBClient {
 	}
 
 	c.db = c.client.Database(config.DbName)
+
+	sysLogger.Info(context.Background(), fmt.Sprintf("mongodb [%s] connect success", config.DbName))
 
 	return c
 }

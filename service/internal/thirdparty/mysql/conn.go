@@ -7,6 +7,8 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"personal-website-golang/service/internal/thirdparty/logger"
 )
 
 type IMySQLClient interface {
@@ -29,7 +31,7 @@ type Config struct {
 	ConnMaxLifeMin int
 }
 
-func initWithConfig(config Config) IMySQLClient {
+func initWithConfig(sysLogger logger.ILogger, config Config) IMySQLClient {
 	connect := fmt.Sprintf(
 		"%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=UTC",
 		config.Username,
@@ -52,7 +54,7 @@ func initWithConfig(config Config) IMySQLClient {
 		panic(err)
 	}
 
-	in.SysLogger.Info(context.Background(), fmt.Sprintf("mysql [%s] connect success", config.Database))
+	sysLogger.Info(context.Background(), fmt.Sprintf("mysql [%s] connect success", config.Database))
 
 	sqlDB.SetMaxIdleConns(config.MaxIdle)
 	sqlDB.SetMaxOpenConns(config.MaxOpen)

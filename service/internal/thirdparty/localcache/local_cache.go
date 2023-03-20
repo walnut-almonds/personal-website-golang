@@ -5,9 +5,6 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
-	"go.uber.org/dig"
-
-	config "personal-website-golang/service/internal/config/admin"
 )
 
 var local *localCache
@@ -18,18 +15,6 @@ type ILocalCache interface {
 	Delete(key string)
 	Increment(key string, n int)
 	DeleteSet(key string)
-}
-
-type digIn struct {
-	dig.In
-
-	AppConf config.IAppConfig
-}
-
-func NewDefault(in digIn) ILocalCache {
-	return &localCache{
-		c: cache.New(in.AppConf.GetLocalCacheConfig().DefaultExpirationSec*time.Second, 10*time.Second),
-	}
 }
 
 func New(defaultExpirationSec time.Duration) ILocalCache {

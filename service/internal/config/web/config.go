@@ -1,4 +1,4 @@
-package admin
+package web
 
 func NewAppConfig() IAppConfig {
 	return newAppConfig()

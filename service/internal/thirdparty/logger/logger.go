@@ -3,9 +3,7 @@ package logger
 import (
 	"context"
 	"fmt"
-	config "personal-website-golang/service/internal/config/admin"
 
-	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -19,21 +17,15 @@ type Message struct {
 	Msg     string `json:"msg"`
 }
 
-func NewSysLogger(in digIn) ILogger {
-	return newLogger(getZapLevel(in.AppConf.GetLogConfig().Level), in.AppConf.GetLogConfig().Name, "SysLog", in.AppConf.GetLogConfig().Env)
+func NewSysLogger(level, name, env string) ILogger {
+	return newLogger(getZapLevel(level), name, "SysLog", env)
 }
 
-func NewAppLogger(in digIn) ILogger {
-	return newLogger(getZapLevel(in.AppConf.GetLogConfig().Level), in.AppConf.GetLogConfig().Name, "AppLog", in.AppConf.GetLogConfig().Env)
+func NewAppLogger(level, name, env string) ILogger {
+	return newLogger(getZapLevel(level), name, "AppLog", env)
 }
 
-type digIn struct {
-	dig.In
-
-	AppConf config.IAppConfig
-}
-
-func newLogger(level zapcore.Level, serviceName string, category string, env string) *Logger {
+func newLogger(level zapcore.Level, serviceName, category, env string) *Logger {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:       "time",
 		LevelKey:      "level",

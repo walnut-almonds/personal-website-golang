@@ -1,10 +1,7 @@
 package crontab
 
 import (
-	"log"
-
 	"github.com/robfig/cron/v3"
-	"go.uber.org/dig"
 )
 
 type ICronJob interface {
@@ -14,16 +11,6 @@ type ICronJob interface {
 
 type cronJob struct {
 	cron *cron.Cron
-}
-
-type digIn struct {
-	dig.In
-}
-
-func NewCronJob(in digIn) ICronJob {
-	c := cron.New()
-	log.Print("new crontab job")
-	return &cronJob{cron: c}
 }
 
 func (job *cronJob) Start() {

@@ -3,21 +3,14 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/xerrors"
 )
 
-var (
-	once sync.Once
-	self *redisClusterClient
-)
-
-type RedisClusterClientInterface interface {
+type IRedisClient interface {
 	CheckIfKeyExists(ctx context.Context, key string) (bool, error)
 	GetString(ctx context.Context, key string) (string, error)
 	GetJSON(ctx context.Context, key string, val interface{}) error
@@ -57,39 +50,11 @@ type RedisClusterClientInterface interface {
 	Pipeline() redis.Pipeliner
 }
 
-func Init() error {
-	cfg := config.GetOpsRedisConfig()
-	if len(cfg.Addresses) == 0 {
-		return errors.New("no redis instance")
-	}
-	InitWithConfig(cfg)
-	return nil
+type redisClient struct {
+	client *redis.Client
 }
 
-func InitWithConfig(cfg config.RedisOps) {
-	once.Do(func() {
-		self = &redisClusterClient{
-			client: redis.NewClusterClient(&redis.ClusterOptions{
-				Addrs:    cfg.Addresses,
-				Password: cfg.Password,
-			}),
-		}
-	})
-}
-
-func GetClient() RedisClusterClientInterface {
-	return self
-}
-
-func GetPipeline() redis.Pipeliner {
-	return self.client.Pipeline()
-}
-
-type redisClusterClient struct {
-	client *redis.ClusterClient
-}
-
-func (r *redisClusterClient) CheckIfKeyExists(ctx context.Context, key string) (bool, error) {
+func (r *redisClient) CheckIfKeyExists(ctx context.Context, key string) (bool, error) {
 	val, err := r.client.Exists(ctx, key).Result()
 	if err != nil {
 		return false, xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -98,7 +63,7 @@ func (r *redisClusterClient) CheckIfKeyExists(ctx context.Context, key string) (
 	return val > 0, nil
 }
 
-func (r *redisClusterClient) GetString(ctx context.Context, key string) (string, error) {
+func (r *redisClient) GetString(ctx context.Context, key string) (string, error) {
 	data, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		return "", xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -107,7 +72,7 @@ func (r *redisClusterClient) GetString(ctx context.Context, key string) (string,
 	return data, nil
 }
 
-func (r *redisClusterClient) GetJSON(ctx context.Context, key string, val interface{}) error {
+func (r *redisClient) GetJSON(ctx context.Context, key string, val interface{}) error {
 	data, err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -121,7 +86,7 @@ func (r *redisClusterClient) GetJSON(ctx context.Context, key string, val interf
 	return nil
 }
 
-func (r *redisClusterClient) GetJSONWithMultiKeys(ctx context.Context, val interface{}, keys ...string) error {
+func (r *redisClient) GetJSONWithMultiKeys(ctx context.Context, val interface{}, keys ...string) error {
 	data, err := r.client.MGet(ctx, keys...).Result()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis 一次取得多筆資料 %v: %w", keys, err)
@@ -137,11 +102,11 @@ func (r *redisClusterClient) GetJSONWithMultiKeys(ctx context.Context, val inter
 	return nil
 }
 
-func (r *redisClusterClient) SubscribeChannel(ctx context.Context, channels ...string) <-chan *redis.Message {
+func (r *redisClient) SubscribeChannel(ctx context.Context, channels ...string) <-chan *redis.Message {
 	return r.client.Subscribe(ctx, channels...).Channel()
 }
 
-func (r *redisClusterClient) AddToSet(ctx context.Context, key string, values ...interface{}) error {
+func (r *redisClient) AddToSet(ctx context.Context, key string, values ...interface{}) error {
 	_, err := r.client.SAdd(ctx, key, values...).Result()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis 新增值 %v 進 Set %s: %w", values, key, err)
@@ -149,7 +114,7 @@ func (r *redisClusterClient) AddToSet(ctx context.Context, key string, values ..
 	return err
 }
 
-func (r *redisClusterClient) AddToSortedSet(ctx context.Context, key string, score float64, value interface{}) error {
+func (r *redisClient) AddToSortedSet(ctx context.Context, key string, score float64, value interface{}) error {
 	_, err := r.client.ZAdd(ctx, key, &redis.Z{Score: score, Member: value}).Result()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis 新增值 %v 進 SortedSet %s: %w", value, key, err)
@@ -157,7 +122,7 @@ func (r *redisClusterClient) AddToSortedSet(ctx context.Context, key string, sco
 	return err
 }
 
-func (r *redisClusterClient) GetAllInSet(ctx context.Context, key string) ([]string, error) {
+func (r *redisClient) GetAllInSet(ctx context.Context, key string) ([]string, error) {
 	values, err := r.client.SMembers(ctx, key).Result()
 	if err != nil {
 		return nil, xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -165,7 +130,7 @@ func (r *redisClusterClient) GetAllInSet(ctx context.Context, key string) ([]str
 	return values, nil
 }
 
-func (r *redisClusterClient) GetAllInSortedSet(ctx context.Context, key string) ([]string, error) {
+func (r *redisClient) GetAllInSortedSet(ctx context.Context, key string) ([]string, error) {
 	values, err := r.client.ZRange(ctx, key, 0, -1).Result()
 	if err != nil {
 		return nil, xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -173,7 +138,7 @@ func (r *redisClusterClient) GetAllInSortedSet(ctx context.Context, key string) 
 	return values, nil
 }
 
-func (r *redisClusterClient) RemoveFromSet(ctx context.Context, key string, values ...interface{}) (int64, error) {
+func (r *redisClient) RemoveFromSet(ctx context.Context, key string, values ...interface{}) (int64, error) {
 	count, err := r.client.SRem(ctx, key, values...).Result()
 	if err != nil {
 		return 0, xerrors.Errorf("無法從 Redis 的 Set %s 刪除 %v: %w", key, values, err)
@@ -181,7 +146,7 @@ func (r *redisClusterClient) RemoveFromSet(ctx context.Context, key string, valu
 	return count, err
 }
 
-func (r *redisClusterClient) RemoveFromSortedSet(ctx context.Context, key string, value interface{}) error {
+func (r *redisClient) RemoveFromSortedSet(ctx context.Context, key string, value interface{}) error {
 	_, err := r.client.ZRem(ctx, key, value).Result()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis 的 SortedSet %s 刪除 %v: %w", key, value, err)
@@ -189,7 +154,7 @@ func (r *redisClusterClient) RemoveFromSortedSet(ctx context.Context, key string
 	return err
 }
 
-func (r *redisClusterClient) RemoveAllFromSet(ctx context.Context, key string) (int64, error) {
+func (r *redisClient) RemoveAllFromSet(ctx context.Context, key string) (int64, error) {
 	count, err := r.client.Del(ctx, key).Result()
 	if err != nil {
 		return 0, xerrors.Errorf("無法從 Redis 刪除 Set %s 的全部值: %w", key, err)
@@ -197,7 +162,7 @@ func (r *redisClusterClient) RemoveAllFromSet(ctx context.Context, key string) (
 	return count, nil
 }
 
-func (r *redisClusterClient) RemoveAllFromSortedSet(ctx context.Context, key string) (int64, error) {
+func (r *redisClient) RemoveAllFromSortedSet(ctx context.Context, key string) (int64, error) {
 	count, err := r.client.Del(ctx, key).Result()
 	if err != nil {
 		return 0, xerrors.Errorf("無法從 Redis 刪除 Sorted Set %s 的全部值: %w", key, err)
@@ -205,7 +170,7 @@ func (r *redisClusterClient) RemoveAllFromSortedSet(ctx context.Context, key str
 	return count, nil
 }
 
-func (r *redisClusterClient) CheckInSet(ctx context.Context, key string, values interface{}) (bool, error) {
+func (r *redisClient) CheckInSet(ctx context.Context, key string, values interface{}) (bool, error) {
 	existed, err := r.client.SIsMember(ctx, key, values).Result()
 	if err != nil {
 		return false, xerrors.Errorf("無法從 Redis 確認 %s 是否存在: %w", key, err)
@@ -213,7 +178,7 @@ func (r *redisClusterClient) CheckInSet(ctx context.Context, key string, values 
 	return existed, nil
 }
 
-func (r *redisClusterClient) GetSetCount(ctx context.Context, key string) (int64, error) {
+func (r *redisClient) GetSetCount(ctx context.Context, key string) (int64, error) {
 	count, err := r.client.SCard(ctx, key).Result()
 	if err != nil {
 		return 0, xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -221,7 +186,7 @@ func (r *redisClusterClient) GetSetCount(ctx context.Context, key string) (int64
 	return count, nil
 }
 
-func (r *redisClusterClient) Exists(ctx context.Context, key ...string) (bool, error) {
+func (r *redisClient) Exists(ctx context.Context, key ...string) (bool, error) {
 	data, err := r.client.Exists(ctx, key...).Result()
 	if err != nil {
 		return false, xerrors.Errorf("無法使用 Redis Exists %s", err)
@@ -229,14 +194,14 @@ func (r *redisClusterClient) Exists(ctx context.Context, key ...string) (bool, e
 	return data > 0, nil
 }
 
-func (r *redisClusterClient) Set(ctx context.Context, key string, val interface{}, expiration time.Duration) error {
+func (r *redisClient) Set(ctx context.Context, key string, val interface{}, expiration time.Duration) error {
 	if err := r.client.Set(ctx, key, val, expiration).Err(); err != nil {
 		return xerrors.Errorf("無法 Set Redis 值 %s: %w", key, err)
 	}
 	return nil
 }
 
-func (r *redisClusterClient) Get(ctx context.Context, key string, val interface{}) error {
+func (r *redisClient) Get(ctx context.Context, key string, val interface{}) error {
 	data, err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -250,7 +215,7 @@ func (r *redisClusterClient) Get(ctx context.Context, key string, val interface{
 	return nil
 }
 
-func (r *redisClusterClient) Del(ctx context.Context, key string) (int64, error) {
+func (r *redisClient) Del(ctx context.Context, key string) (int64, error) {
 	data, err := r.client.Del(ctx, key).Result()
 	if err != nil {
 		return data, xerrors.Errorf("無法從 Redis Del %s: %w", key, err)
@@ -259,7 +224,7 @@ func (r *redisClusterClient) Del(ctx context.Context, key string) (int64, error)
 	return data, nil
 }
 
-func (r *redisClusterClient) MGet(ctx context.Context, key string) ([]interface{}, error) {
+func (r *redisClient) MGet(ctx context.Context, key string) ([]interface{}, error) {
 	data, err := r.client.MGet(ctx, key).Result()
 	if err != nil {
 		return nil, xerrors.Errorf("無法從 Redis 取得 %s: %w", key, err)
@@ -267,14 +232,14 @@ func (r *redisClusterClient) MGet(ctx context.Context, key string) ([]interface{
 	return data, nil
 }
 
-func (r *redisClusterClient) HMSet(ctx context.Context, key string, val ...interface{}) error {
+func (r *redisClient) HMSet(ctx context.Context, key string, val ...interface{}) error {
 	if err := r.client.HMSet(ctx, key, val...).Err(); err != nil {
 		return xerrors.Errorf("無法 HMSet Redis 值 %s: %w", key, err)
 	}
 	return nil
 }
 
-func (r *redisClusterClient) HMGet(ctx context.Context, key string, field ...string) ([]interface{}, error) {
+func (r *redisClient) HMGet(ctx context.Context, key string, field ...string) ([]interface{}, error) {
 	data, err := r.client.HMGet(ctx, key, field...).Result()
 	if err != nil {
 		return nil, xerrors.Errorf("無法從 Redis HMGet %s: %w", key, err)
@@ -283,14 +248,14 @@ func (r *redisClusterClient) HMGet(ctx context.Context, key string, field ...str
 	return data, nil
 }
 
-func (r *redisClusterClient) HSet(ctx context.Context, key string, field string, val interface{}) error {
+func (r *redisClient) HSet(ctx context.Context, key string, field string, val interface{}) error {
 	if err := r.client.HSet(ctx, key, field, val).Err(); err != nil {
 		return xerrors.Errorf("無法 HSet Redis 值 %s: %w", key, err)
 	}
 	return nil
 }
 
-func (r *redisClusterClient) HGet(ctx context.Context, key string, field string, val interface{}) error {
+func (r *redisClient) HGet(ctx context.Context, key string, field string, val interface{}) error {
 	data, err := r.client.HGet(ctx, key, field).Bytes()
 	if err != nil {
 		return xerrors.Errorf("無法從 Redis HGet %s-%s: %w", key, field, err)
@@ -306,7 +271,7 @@ func (r *redisClusterClient) HGet(ctx context.Context, key string, field string,
 	return nil
 }
 
-func (r *redisClusterClient) HLen(ctx context.Context, key string) (int64, error) {
+func (r *redisClient) HLen(ctx context.Context, key string) (int64, error) {
 	data, err := r.client.HLen(ctx, key).Result()
 	if err != nil {
 		return data, xerrors.Errorf("無法從 Redis HLen %s: %w", key, err)
@@ -315,7 +280,7 @@ func (r *redisClusterClient) HLen(ctx context.Context, key string) (int64, error
 	return data, nil
 }
 
-func (r *redisClusterClient) HDel(ctx context.Context, key string, field string) (int64, error) {
+func (r *redisClient) HDel(ctx context.Context, key string, field string) (int64, error) {
 	data, err := r.client.HDel(ctx, key, field).Result()
 	if err != nil {
 		return data, xerrors.Errorf("無法從 Redis HDel %s: %w", key, err)
@@ -324,7 +289,7 @@ func (r *redisClusterClient) HDel(ctx context.Context, key string, field string)
 	return data, nil
 }
 
-func (r *redisClusterClient) ZAdd(ctx context.Context, key string, member string, score float64) (int64, error) {
+func (r *redisClient) ZAdd(ctx context.Context, key string, member string, score float64) (int64, error) {
 	memberObj := &redis.Z{
 		Score:  score,
 		Member: member,
@@ -337,7 +302,7 @@ func (r *redisClusterClient) ZAdd(ctx context.Context, key string, member string
 	return data, nil
 }
 
-func (r *redisClusterClient) ZRange(ctx context.Context, key string, start, stop int64) ([]string, error) {
+func (r *redisClient) ZRange(ctx context.Context, key string, start, stop int64) ([]string, error) {
 	data, err := r.client.ZRange(ctx, key, start, stop).Result()
 	if err != nil {
 		return data, xerrors.Errorf("無法從 Redis ZRange %s: %w", key, err)
@@ -346,7 +311,7 @@ func (r *redisClusterClient) ZRange(ctx context.Context, key string, start, stop
 	return data, nil
 }
 
-func (r *redisClusterClient) ZRem(ctx context.Context, key string, member string) (int64, error) {
+func (r *redisClient) ZRem(ctx context.Context, key string, member string) (int64, error) {
 	data, err := r.client.ZRem(ctx, key, member).Result()
 	if err != nil {
 		return data, xerrors.Errorf("無法從 Redis ZRem %s: %w", key, err)
@@ -355,7 +320,7 @@ func (r *redisClusterClient) ZRem(ctx context.Context, key string, member string
 	return data, nil
 }
 
-func (r *redisClusterClient) Publish(ctx context.Context, channel string, message interface{}) (int64, error) {
+func (r *redisClient) Publish(ctx context.Context, channel string, message interface{}) (int64, error) {
 	data, err := r.client.Publish(ctx, channel, message).Result()
 	if err != nil {
 		return data, xerrors.Errorf("無法 Publish 資料到 Redis HDel %s: %w", channel, err)
@@ -363,11 +328,11 @@ func (r *redisClusterClient) Publish(ctx context.Context, channel string, messag
 	return data, nil
 }
 
-func (r *redisClusterClient) Subscribe(ctx context.Context, channel string) <-chan *redis.Message {
+func (r *redisClient) Subscribe(ctx context.Context, channel string) <-chan *redis.Message {
 	return r.client.Subscribe(ctx, channel).Channel()
 }
 
-func (r *redisClusterClient) HMGetByKey(ctx context.Context, key string, fields []string) (map[string]string, error) {
+func (r *redisClient) HMGetByKey(ctx context.Context, key string, fields []string) (map[string]string, error) {
 	data, err := r.client.HMGet(ctx, key, fields...).Result()
 	if err != nil {
 		return nil, xerrors.Errorf("無法從Redis 取得 %s: %w", key, err)
@@ -383,7 +348,7 @@ func (r *redisClusterClient) HMGetByKey(ctx context.Context, key string, fields 
 	return outputData, nil
 }
 
-func (r *redisClusterClient) HMSetByKey(ctx context.Context, key string, values map[string]interface{}) (bool, error) {
+func (r *redisClient) HMSetByKey(ctx context.Context, key string, values map[string]interface{}) (bool, error) {
 	result, err := r.client.HMSet(ctx, key, convertToMap(values)).Result()
 	if err != nil {
 		return false, xerrors.Errorf("無法從Redis 新增 Key %s 值 %w", key, err)
@@ -392,7 +357,7 @@ func (r *redisClusterClient) HMSetByKey(ctx context.Context, key string, values 
 	return result, nil
 }
 
-func (r *redisClusterClient) IncrByFloat(ctx context.Context, key string, value float64) (float64, error) {
+func (r *redisClient) IncrByFloat(ctx context.Context, key string, value float64) (float64, error) {
 	data, err := r.client.IncrByFloat(ctx, key, value).Result()
 	if err != nil {
 		return 0, xerrors.Errorf("無法從Redis 新增 %s: %w", key, err)
@@ -401,7 +366,7 @@ func (r *redisClusterClient) IncrByFloat(ctx context.Context, key string, value 
 	return data, nil
 }
 
-func (r *redisClusterClient) HIncrByFloat(ctx context.Context, key string, field string, value float64) (float64, error) {
+func (r *redisClient) HIncrByFloat(ctx context.Context, key string, field string, value float64) (float64, error) {
 	data, err := r.client.HIncrByFloat(ctx, key, field, value).Result()
 	if err != nil {
 		return 0, xerrors.Errorf("無法從Redis 新增 %s: %w", key, err)
@@ -425,6 +390,6 @@ func convertToMap(value interface{}) map[string]interface{} {
 	return valueMap
 }
 
-func (r *redisClusterClient) Pipeline() redis.Pipeliner {
+func (r *redisClient) Pipeline() redis.Pipeliner {
 	return r.client.Pipeline()
 }

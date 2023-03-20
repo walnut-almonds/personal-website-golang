@@ -1,4 +1,4 @@
-package admin
+package web
 
 type MySQLOps struct {
 	Password string `mapstructure:"password"`
@@ -12,6 +12,12 @@ type MongoOps struct {
 	Password string `mapstructure:"password"`
 	Host     string `mapstructure:"host"`
 	Dbname   string `mapstructure:"dbname"`
+}
+
+type RedisOps struct {
+	Address  string `mapstructure:"address"`
+	Password string `mapstructure:"password"`
+	Database int    `mapstructure:"database"`
 }
 
 type FileServerOps struct {

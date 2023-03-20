@@ -11,7 +11,7 @@ import (
 func NewAdminClient(in digInAdmin) IMongoDBClient {
 	appConf := in.AppConf.GetMongoConfig()
 	opsConf := in.OpsConf.GetOpsMongoConfig()
-	return initWithConfig(Config{
+	return initWithConfig(in.SysLogger, Config{
 		Host:     opsConf.Host,
 		User:     opsConf.User,
 		Password: opsConf.Password,
@@ -39,7 +39,7 @@ type digInAdmin struct {
 func NewWebClient(in digInWeb) IMongoDBClient {
 	appConf := in.AppConf.GetMongoConfig()
 	opsConf := in.OpsConf.GetOpsMongoConfig()
-	return initWithConfig(Config{
+	return initWithConfig(in.SysLogger, Config{
 		Host:     opsConf.Host,
 		User:     opsConf.User,
 		Password: opsConf.Password,

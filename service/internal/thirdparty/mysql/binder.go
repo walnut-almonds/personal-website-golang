@@ -11,7 +11,7 @@ import (
 func NewAdminClient(in digInAdmin) IMySQLClient {
 	appConf := in.AppConf.GetMySQLConfig()
 	opsConf := in.OpsConf.GetOpsMySQLConfig()
-	return initWithConfig(Config{
+	return initWithConfig(in.SysLogger, Config{
 		Username: opsConf.Username,
 		Password: opsConf.Password,
 		Address:  opsConf.Address,
@@ -35,7 +35,7 @@ type digInAdmin struct {
 func NewWebClient(in digInWeb) IMySQLClient {
 	appConf := in.AppConf.GetMySQLConfig()
 	opsConf := in.OpsConf.GetOpsMySQLConfig()
-	return initWithConfig(Config{
+	return initWithConfig(in.SysLogger, Config{
 		Username: opsConf.Username,
 		Password: opsConf.Password,
 		Address:  opsConf.Address,

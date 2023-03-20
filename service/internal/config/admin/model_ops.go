@@ -14,6 +14,12 @@ type MongoOps struct {
 	Dbname   string `mapstructure:"dbname"`
 }
 
+type RedisOps struct {
+	Address  string `mapstructure:"address"`
+	Password string `mapstructure:"password"`
+	Database int    `mapstructure:"database"`
+}
+
 type FileServerOps struct {
 	Address  string `mapstructure:"address"`
 	Username string `mapstructure:"username"`

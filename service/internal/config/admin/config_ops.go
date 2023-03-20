@@ -22,8 +22,11 @@ func newOpsConfig() IOpsConfig {
 
 type IOpsConfig interface {
 	GetOpsMySQLConfig() MySQLOps
-	GetOpsFileServerConfig() FileServerOps
 	GetOpsMongoConfig() MongoOps
+	GetOpsRedisConfig() RedisOps
+	GetOpsFileServerConfig() FileServerOps
+	GetOpsSlackConfig() SlackOps
+	GetOpsTelegramConfig() TelegramOps
 }
 
 type OpsConfigSetup struct {
@@ -35,8 +38,9 @@ type OpsConfigSetup struct {
 
 type OpsConfig struct {
 	MySQLOps      MySQLOps      `mapstructure:"mysql_ops"`
-	FileServerOps FileServerOps `mapstructure:"file_server_ops"`
 	MongoOps      MongoOps      `mapstructure:"mongo_ops"`
+	RedisOps      RedisOps      `mapstructure:"redis_ops"`
+	FileServerOps FileServerOps `mapstructure:"file_server_ops"`
 	SlackOps      SlackOps      `mapstructure:"slack_ops"`
 	TelegramOps   TelegramOps   `mapstructure:"telegram_ops"`
 }
@@ -77,12 +81,16 @@ func (cfg *OpsConfigSetup) GetOpsMySQLConfig() MySQLOps {
 	return cfg.OpsConfig.MySQLOps
 }
 
-func (cfg *OpsConfigSetup) GetOpsFileServerConfig() FileServerOps {
-	return cfg.OpsConfig.FileServerOps
-}
-
 func (cfg *OpsConfigSetup) GetOpsMongoConfig() MongoOps {
 	return cfg.OpsConfig.MongoOps
+}
+
+func (cfg *OpsConfigSetup) GetOpsRedisConfig() RedisOps {
+	return cfg.OpsConfig.RedisOps
+}
+
+func (cfg *OpsConfigSetup) GetOpsFileServerConfig() FileServerOps {
+	return cfg.OpsConfig.FileServerOps
 }
 
 func (cfg *OpsConfigSetup) GetOpsSlackConfig() SlackOps {
