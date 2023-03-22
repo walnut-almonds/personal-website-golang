@@ -13,8 +13,8 @@ type LogConfig struct {
 }
 
 type GinConfig struct {
-	AdminAddress string `mapstructure:"admin_address"`
-	DebugMode    bool   `mapstructure:"debug_mode"`
+	WebAddress string `mapstructure:"web_address"`
+	DebugMode  bool   `mapstructure:"debug_mode"`
 }
 
 type MySQLConfig struct {

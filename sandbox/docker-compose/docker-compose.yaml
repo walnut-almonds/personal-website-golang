@@ -2,7 +2,7 @@
 version: "3"
 services:
   admin:
-    container_name: personal-website-golang
+    container_name: personal-website-golang-admin
     build: ./admin
     tty: true
     volumes:

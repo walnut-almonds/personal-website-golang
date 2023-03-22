@@ -2,7 +2,7 @@ app_config:
   server_config:
     time_zone: 8
   log_config:
-    name: "lottery-info"
+    name: "personal-website-admin"
     env: "local"
     level: "debug"
   gin_config:
