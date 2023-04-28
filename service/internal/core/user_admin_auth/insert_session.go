@@ -1,4 +1,4 @@
-package auth
+package user_admin_auth
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 type IInsertSession interface {
-	Handle(ctx context.Context, cond *bo.AddSession) (string, error)
+	Handle(ctx context.Context, cond *bo.InsertSession) (string, error)
 }
 
 type insertSession struct {

@@ -1,7 +1,8 @@
 package admin
 
 import (
-	"personal-website-golang/service/internal/core/auth"
+	"personal-website-golang/service/internal/core/user_admin_auth"
+	"personal-website-golang/service/internal/thirdparty/rbac"
 	"sync"
 
 	"go.uber.org/dig"
@@ -26,6 +27,8 @@ type digIn struct {
 	dig.In
 
 	AuthUseCase authUseCaseIn
+
+	RBACAuthClient rbac.IAuthClient
 }
 
 type digOut struct {
@@ -39,8 +42,8 @@ type digOut struct {
 type authUseCaseIn struct {
 	dig.In
 
-	InsertSession auth.IInsertSession
-	DeleteSession auth.IDeleteSession
+	InsertSession user_admin_auth.IInsertSession
+	DeleteSession user_admin_auth.IDeleteSession
 
-	ValidateToken auth.IValidateToken
+	ValidateToken user_admin_auth.IValidateToken
 }

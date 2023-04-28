@@ -21,6 +21,7 @@ func newOpsConfig() IOpsConfig {
 }
 
 type IOpsConfig interface {
+	GetOpsServerConfig() ServerOps
 	GetOpsMySQLConfig() MySQLOps
 	GetOpsMongoConfig() MongoOps
 	GetOpsRedisConfig() RedisOps
@@ -37,6 +38,7 @@ type OpsConfigSetup struct {
 }
 
 type OpsConfig struct {
+	ServerOps     ServerOps     `mapstructure:"server_ops"`
 	MySQLOps      MySQLOps      `mapstructure:"mysql_ops"`
 	MongoOps      MongoOps      `mapstructure:"mongo_ops"`
 	RedisOps      RedisOps      `mapstructure:"redis_ops"`
@@ -75,6 +77,10 @@ func (c *OpsConfigSetup) loadYaml() {
 		c.lastChangeTime = time.Now()
 	})
 	c.v.WatchConfig()
+}
+
+func (cfg *OpsConfigSetup) GetOpsServerConfig() ServerOps {
+	return cfg.OpsConfig.ServerOps
 }
 
 func (cfg *OpsConfigSetup) GetOpsMySQLConfig() MySQLOps {

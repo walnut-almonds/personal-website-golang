@@ -1,6 +1,7 @@
-package auth
+package user_admin_auth
 
 import (
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/dig"
 
 	"personal-website-golang/service/internal/thirdparty/logger"
@@ -16,6 +17,8 @@ type digIn struct {
 	dig.In
 
 	AppLogger logger.ILogger `name:"appLogger"`
+
+	Redis *redis.Client
 }
 
 type digOut struct {

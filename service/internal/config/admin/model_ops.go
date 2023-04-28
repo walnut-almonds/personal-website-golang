@@ -1,5 +1,9 @@
 package admin
 
+type ServerOps struct {
+	PasswordSalt string `mapstructure:"password_salt"`
+}
+
 type MySQLOps struct {
 	Password string `mapstructure:"password"`
 	Database string `mapstructure:"database"`

@@ -3,8 +3,10 @@ version: "3"
 services:
   admin:
     container_name: personal-website-golang-admin
-    build: ./admin
+    build:
+      context: ../..
+      dockerfile: ./sandbox/docker-compose/admin/dockerfile
     tty: true
-    volumes:
-      - ./:/personal-website-golang
+#    volumes:
+#      - ./:/personal-website-golang
     network_mode: host

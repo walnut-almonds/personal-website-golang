@@ -12,10 +12,15 @@ import (
 )
 
 type IAuthClient interface {
+	GetAdminAuthInstance() *casbin.Enforcer
 }
 
 type AuthClient struct {
-	*casbin.Enforcer
+	adminInstance *casbin.Enforcer
+}
+
+func (a *AuthClient) GetAdminAuthInstance() *casbin.Enforcer {
+	return a.adminInstance
 }
 
 func newAuth(sysLogger logger.ILogger, db *gorm.DB, prefix string) IAuthClient {
@@ -32,7 +37,7 @@ func newAuth(sysLogger logger.ILogger, db *gorm.DB, prefix string) IAuthClient {
 	cas.EnableAutoSave(true)
 
 	adminInstance := &AuthClient{
-		cas,
+		adminInstance: cas,
 	}
 	if err := adminInstance.initData(db); err != nil {
 		panic(err)
@@ -44,7 +49,7 @@ func newAuth(sysLogger logger.ILogger, db *gorm.DB, prefix string) IAuthClient {
 }
 
 func (ac *AuthClient) initData(db *gorm.DB) error {
-	if err := ac.Enforcer.LoadPolicy(); err != nil {
+	if err := ac.adminInstance.LoadPolicy(); err != nil {
 		return err
 	}
 
@@ -53,7 +58,7 @@ func (ac *AuthClient) initData(db *gorm.DB) error {
 		return err
 	}
 	for _, feature := range features {
-		if _, err := ac.AddPolicy(feature.Id, feature.Path, feature.Method); err != nil {
+		if _, err := ac.adminInstance.AddPolicy(feature.Id, feature.Path, feature.Method); err != nil {
 			return err
 		}
 	}
@@ -63,7 +68,7 @@ func (ac *AuthClient) initData(db *gorm.DB) error {
 		return err
 	}
 	for _, rule := range rules {
-		if _, err := ac.AddGroupingPolicy(rule.NodeId, rule.FeatureId); err != nil {
+		if _, err := ac.adminInstance.AddGroupingPolicy(rule.NodeId, rule.FeatureId); err != nil {
 			return err
 		}
 	}

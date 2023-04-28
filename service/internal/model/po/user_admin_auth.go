@@ -1,5 +1,18 @@
 package po
 
+type AuthNode struct {
+	Id      string `gorm:"column:id"`      // Id
+	Name    string `gorm:"column:name"`    // 節點名稱
+	Parent  string `gorm:"column:parent"`  // 父節點
+	Type    int    `gorm:"column:type"`    // 0=節點 1=功能
+	Sort    int    `gorm:"column:sort"`    // UI排序
+	Enabled int    `gorm:"column:enabled"` // 狀態 0: 禁用 1: 啟用
+}
+
+func (AuthNode) TableName() string {
+	return "auth_node"
+}
+
 type AccessFeature struct {
 	Id     string `gorm:"column:id"`     // 序號
 	Name   string `gorm:"column:name"`   // 名稱

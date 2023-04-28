@@ -8,17 +8,17 @@ COPY ../.. .
 RUN apk add git &&\
     apk add ca-certificates
 
-RUN go build -o admin /app/cmd/admin/
+RUN go build -o web /app/cmd/web/
 
 FROM scratch
 
 ENV appname=personal-website-golang
 WORKDIR /$appname
 
-COPY --from=go-builder /$appname/admin .
+COPY --from=go-builder /$appname/web .
 COPY --from=go-builder /$appname/conf.d conf.d
 COPY --from=go-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 ADD https://github.com/golang/go/raw/master/lib/time/zoneinfo.zip /zoneinfo.zip
 ENV ZONEINFO /zoneinfo.zip
 
-ENTRYPOINT ["./admin"]
+ENTRYPOINT ["./web"]
